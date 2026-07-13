@@ -1,0 +1,49 @@
+name: Ignition Scanner
+
+# Runs the scanner automatically on a schedule and fires Telegram alerts.
+# Cron times are UTC. The times below target US Eastern during summer (EDT).
+# In US winter (EST) the market is one hour later in UTC — see README note.
+on:
+  schedule:
+    - cron: "0 12 * * 1-5"    # 08:00 ET — pre-market sweep
+    - cron: "25 13 * * 1-5"   # 09:25 ET — 5 min before the US open
+    - cron: "15 20 * * 1-5"   # 16:15 ET — after-hours
+  workflow_dispatch:          # lets you trigger a scan manually from GitHub
+    inputs:
+      session:
+        description: "Session to scan"
+        default: "open"
+        type: choice
+        options: [premarket, open, afterhours]
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      # Pick the session from the cron time (or the manual input).
+      - name: Determine session
+        id: session
+        run: |
+          if [ -n "${{ github.event.inputs.session }}" ]; then
+            echo "value=${{ github.event.inputs.session }}" >> "$GITHUB_OUTPUT"
+          else
+            hour=$(date -u +%H)
+            if [ "$hour" = "12" ]; then echo "value=premarket" >> "$GITHUB_OUTPUT"
+            elif [ "$hour" = "20" ]; then echo "value=afterhours" >> "$GITHUB_OUTPUT"
+            else echo "value=open" >> "$GITHUB_OUTPUT"; fi
+          fi
+
+      - name: Run scanner
+        env:
+          FINVIZ_AUTH_TOKEN: ${{ secrets.FINVIZ_AUTH_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python main.py --session ${{ steps.session.outputs.value }}
