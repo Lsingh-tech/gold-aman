@@ -101,8 +101,11 @@ off.)
 rule-based levels itself on every chart, every day - entry (dip-buy or breakout),
 stop, TP1, TP2, exit line and support for stocks, plus the category
 (STRONG / BUILDING / WEAKENING), keep/remove check and today's hits. On
-futures, indexes and gold (NQ1!, GC1!, NKD1!, NI225...) it draws the 1-month
-high/low, 20/50/200-day averages and yesterday's / overnight high and low.
+futures, indexes and gold (NQ1!, GC1!, NKD1!, NI225...) it draws a trend-based
+trade plan - LONG above yesterday's high when above the 20d & 50d, SHORT below
+yesterday's low when under both, both plans when in between - each with entry,
+stop (2 ATR), TP1 (2R) and TP2 (3R), plus the 1-month high/low, 20/50/200-day
+averages and the overnight high and low.
 Nothing to update by hand.
 
 `tradingview/trade_levels.pine` is the fixed 2026-10-27 snapshot.

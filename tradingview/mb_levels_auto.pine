@@ -9,8 +9,13 @@
 //   else     -> breakout entry = 1-month high + 0.1 ATR
 //   Stop = entry - 2 ATR | TP1 = entry + 4 ATR (2R) | TP2 = entry + 6 ATR (3R)
 //   Exit = daily close below SMA50
-// Futures / indexes / gold (live): 1-month high/low, SMA20/50/200,
-//   yesterday's high/low and today's (overnight) high/low.
+// Futures / indexes / gold (NQ1!, GC1!, NKD1!, NI225...): trend from the last
+//   completed day (close vs SMA20 & SMA50) picks the trade direction:
+//   Above both -> LONG  entry = yesterday's high + 0.1 ATR
+//   Below both -> SHORT entry = yesterday's low  - 0.1 ATR
+//   In between -> both plans drawn; trade whichever triggers first
+//   Stop = 2 ATR against | TP1 = 4 ATR (2R) | TP2 = 6 ATR (3R)
+//   Plus 1-month high/low, SMA20/50/200 and today's (overnight) high/low.
 indicator("MB Levels (auto)", overlay = true, max_lines_count = 60, max_labels_count = 60)
 
 showMA     = input.bool(true, "Daily SMA 20 / 50 / 200")
@@ -103,20 +108,38 @@ if barstate.islast and showLevels
         table.cell(info, 0, 2, rm + "   (1M " + str.tostring(perf, "#.#") + "%)", text_color = str.startswith(rm, "✅") ? G : R, text_size = size.small, text_halign = text.align_left)
         table.cell(info, 0, 3, hit == "" ? "No level hit today" : hit, text_color = hit == "" ? N : O, text_size = size.small, text_halign = text.align_left)
     else
-        bias = lc < ls20 and lc < ls50 ? "BEARISH" : lc > ls20 and lc > ls50 ? "BULLISH" : "NEUTRAL"
-        bc = bias == "BEARISH" ? R : bias == "BULLISH" ? G : O
+        longOk  = not (c < s20 and c < s50)
+        shortOk = not (c > s20 and c > s50)
+        bias = longOk and shortOk ? "NEUTRAL - both ways" : longOk ? "BULLISH - long plan" : "BEARISH - short plan"
+        bc = longOk and shortOk ? O : longOk ? G : R
 
         lvl(lh1m, "1-month high", O, D)
-        lvl(ls20, "20d avg", B, S)
-        lvl(ls50, "50d avg", O, S)
+        lvl(ls20, "20d avg", B, D)
+        lvl(ls50, "50d avg", O, D)
         lvl(ls200, "200d avg", R, D)
-        lvl(ph,  "Yesterday high", N, D)
-        lvl(pl,  "Yesterday low", N, D)
-        lvl(dh,  "Today / overnight high", B, D)
-        lvl(dl,  "Today / overnight low", B, D)
-        lvl(ll1m, "1-month low (floor)", R, S)
+        lvl(dh,  "Today / overnight high", N, D)
+        lvl(dl,  "Today / overnight low", N, D)
+        lvl(ll1m, "1-month low (floor)", R, D)
 
-        table.cell(info, 0, 0, syminfo.ticker + "  " + bias + "  ·  RSI " + str.tostring(lr, "#"), text_color = bc, text_size = size.normal, text_halign = text.align_left)
-        table.cell(info, 0, 1, "Ceiling " + f2(math.min(ls20, ls50) > lc ? math.min(ls20, ls50) : lh1m) + " · Floor " + f2(ll1m), text_color = color.white, text_size = size.small, text_halign = text.align_left)
-        table.cell(info, 0, 2, "Below 20d & 50d = sell rallies. Above both = buy dips.", text_color = N, text_size = size.small, text_halign = text.align_left)
-        table.cell(info, 0, 3, "", text_color = N, text_size = size.small)
+        longTxt = ""
+        if longOk
+            le = lph + 0.1 * a
+            lvl(le + 6 * a, "LONG TP2 (3R)", G, D)
+            lvl(le + 4 * a, "LONG TP1 (2R)", G, D)
+            lvl(le, "LONG entry (above yesterday high)", B, S)
+            lvl(le - 2 * a, "LONG stop", R, S)
+            longTxt := "LONG > " + f2(le) + " · SL " + f2(le - 2 * a) + " · TP1 " + f2(le + 4 * a) + " · TP2 " + f2(le + 6 * a)
+
+        shortTxt = ""
+        if shortOk
+            se = lpl - 0.1 * a
+            lvl(se + 2 * a, "SHORT stop", R, S)
+            lvl(se, "SHORT entry (below yesterday low)", B, S)
+            lvl(se - 4 * a, "SHORT TP1 (2R)", G, D)
+            lvl(se - 6 * a, "SHORT TP2 (3R)", G, D)
+            shortTxt := "SHORT < " + f2(se) + " · SL " + f2(se + 2 * a) + " · TP1 " + f2(se - 4 * a) + " · TP2 " + f2(se - 6 * a)
+
+        table.cell(info, 0, 0, syminfo.ticker + "  " + bias + "  ·  RSI " + str.tostring(r, "#"), text_color = bc, text_size = size.normal, text_halign = text.align_left)
+        table.cell(info, 0, 1, longTxt, text_color = G, text_size = size.small, text_halign = text.align_left)
+        table.cell(info, 0, 2, shortTxt, text_color = R, text_size = size.small, text_halign = text.align_left)
+        table.cell(info, 0, 3, "Yesterday H " + f2(lph) + " · L " + f2(lpl) + " · Floor " + f2(ll1m), text_color = N, text_size = size.small, text_halign = text.align_left)
