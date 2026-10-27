@@ -155,7 +155,7 @@ if barstate.islast
         zone(92.70, 90.00, "Buy zone", B)
         lvl(88.90, "Stop (under 50d)", R, S)
 
-    // ---------------- Futures (NQ / gold) ----------------
+    // ---------------- Futures (NQ / gold / Nikkei) ----------------
     else if t == "NQ1!" or t == "MNQ1!"
         bias := "BEARISH - bounce, not yet a turn"
         plan := "Above 29,590 -> 29,945 in view. Below 28,987 -> 28,500 / 28,000."
@@ -173,6 +173,22 @@ if barstate.islast
         lvl(4044.0, "Turning point (yesterday high)", B, S)
         lvl(3989.1, "Floor (1-month low)", R, S)
         lvl(3900.0, "Next floor (round number)", R, D)
+    else if t == "NKD1!" or t == "NIY1!" or t == "NK2251!" or t == "NK225M1!"
+        bias := "BEARISH - bouncing off the 200d"
+        plan := "Above 63,850 -> 65,900. Below 62,075 (200d) -> 61,680."
+        lvl(66696.0, "Ceiling 2 (20d avg)", O, D)
+        lvl(65912.0, "Ceiling 1 (50d avg)", O, S)
+        lvl(63850.0, "Turning point (today high)", B, S)
+        lvl(62075.0, "200d avg", R, S)
+        lvl(61680.0, "Floor (1-month low)", R, D)
+    else if t == "NI225" or t == "JP225" or t == "N225"
+        bias := "BEARISH - bouncing off the 200d"
+        plan := "Above 63,685 -> 66,000. Below 61,587 (200d) -> 61,463."
+        lvl(66409.0, "Ceiling 2 (20d avg)", O, D)
+        lvl(65993.0, "Ceiling 1 (50d avg)", O, S)
+        lvl(63685.0, "Turning point (today high)", B, S)
+        lvl(61587.0, "200d avg", R, S)
+        lvl(61463.0, "Floor (1-month low)", R, D)
 
     // ---------------- MB watchlist (LS Catalyst Picks) ----------------
     else if t == "EOG"
