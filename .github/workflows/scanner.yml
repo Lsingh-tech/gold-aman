@@ -5,8 +5,11 @@ name: Ignition Scanner
 # In US winter (EST) the market is one hour later in UTC — see README note.
 on:
   schedule:
+    - cron: "0 11 * * 1-5"    # 07:00 ET — early pre-market sweep
     - cron: "0 12 * * 1-5"    # 08:00 ET — pre-market sweep
     - cron: "25 13 * * 1-5"   # 09:25 ET — 5 min before the US open
+    - cron: "45 13 * * 1-5"   # 09:45 ET — opening drive (first 15 min in)
+    - cron: "30 14 * * 1-5"   # 10:30 ET — morning follow-through
     - cron: "15 20 * * 1-5"   # 16:15 ET — after-hours
   workflow_dispatch:          # lets you trigger a scan manually from GitHub
     inputs:
@@ -14,7 +17,7 @@ on:
         description: "Session to scan"
         default: "open"
         type: choice
-        options: [premarket, open, afterhours]
+        options: [early, premarket, open, opening_drive, morning, afterhours]
 
 jobs:
   scan:
@@ -28,18 +31,29 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      # Pick the session from the cron time (or the manual input).
+      # Pick the session from the cron entry that fired (or the manual input).
+      # Matching on github.event.schedule rather than the clock means a run
+      # that GitHub starts late still gets the right session.
       - name: Determine session
         id: session
+        env:
+          MANUAL: ${{ github.event.inputs.session }}
+          SCHEDULE: ${{ github.event.schedule }}
         run: |
-          if [ -n "${{ github.event.inputs.session }}" ]; then
-            echo "value=${{ github.event.inputs.session }}" >> "$GITHUB_OUTPUT"
+          if [ -n "$MANUAL" ]; then
+            value="$MANUAL"
           else
-            hour=$(date -u +%H)
-            if [ "$hour" = "12" ]; then echo "value=premarket" >> "$GITHUB_OUTPUT"
-            elif [ "$hour" = "20" ]; then echo "value=afterhours" >> "$GITHUB_OUTPUT"
-            else echo "value=open" >> "$GITHUB_OUTPUT"; fi
+            case "$SCHEDULE" in
+              "0 11 * * 1-5")  value=early ;;
+              "0 12 * * 1-5")  value=premarket ;;
+              "25 13 * * 1-5") value=open ;;
+              "45 13 * * 1-5") value=opening_drive ;;
+              "30 14 * * 1-5") value=morning ;;
+              "15 20 * * 1-5") value=afterhours ;;
+              *)               value=open ;;
+            esac
           fi
+          echo "value=$value" >> "$GITHUB_OUTPUT"
 
       - name: Run scanner
         env:

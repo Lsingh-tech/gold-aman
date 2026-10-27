@@ -2,9 +2,12 @@
 Entry point: run one scan for a given session and fire the Telegram alert.
 
 Usage:
-    python main.py --session open          # US regular open (default)
-    python main.py --session premarket     # pre-market
-    python main.py --session afterhours    # after-hours
+    python main.py --session early          # 07:00 ET early pre-market
+    python main.py --session premarket      # 08:00 ET pre-market
+    python main.py --session open           # 09:25 ET, just before the bell (default)
+    python main.py --session opening_drive  # 09:45 ET, after the first 15 minutes
+    python main.py --session morning        # 10:30 ET, morning follow-through
+    python main.py --session afterhours     # 16:15 ET after-hours
 
 Sessions differ only in whether live relative-volume is required (it isn't
 meaningful pre-market) and in the label shown on the message.
@@ -19,8 +22,11 @@ import scanner
 import telegram_notifier
 
 SESSIONS = {
+    "early": {"label": "Early Pre-Market", "use_live_volume": False},
     "premarket": {"label": "Pre-Market", "use_live_volume": False},
     "open": {"label": "US Open", "use_live_volume": True},
+    "opening_drive": {"label": "Opening Drive", "use_live_volume": True},
+    "morning": {"label": "Morning Follow-Through", "use_live_volume": True},
     "afterhours": {"label": "After-Hours", "use_live_volume": True},
 }
 
