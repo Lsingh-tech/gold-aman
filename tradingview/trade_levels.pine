@@ -1,0 +1,168 @@
+//@version=6
+// Trade levels from the 2026-10-27 analysis (daily data through the 2026-10-26 close).
+// Add once: Pine Editor -> paste -> "Add to chart". Then open any symbol below and
+// its levels draw automatically. The SMAs and 20-day high/low are live; the plan
+// levels (triggers, stops, targets) are fixed from the analysis date.
+indicator("Trade Levels 2026-10-27", overlay = true, max_lines_count = 100, max_labels_count = 100)
+
+showMA    = input.bool(true, "Daily SMA 20 / 50 / 200")
+showRange = input.bool(true, "Live 20-day high / low")
+
+sma20  = request.security(syminfo.tickerid, "D", ta.sma(close, 20))
+sma50  = request.security(syminfo.tickerid, "D", ta.sma(close, 50))
+sma200 = request.security(syminfo.tickerid, "D", ta.sma(close, 200))
+hi20   = request.security(syminfo.tickerid, "D", ta.highest(high, 20))
+lo20   = request.security(syminfo.tickerid, "D", ta.lowest(low, 20))
+
+plot(showMA ? sma20 : na, "SMA 20", color.new(#2563eb, 0), 2)
+plot(showMA ? sma50 : na, "SMA 50", color.new(#d97706, 0), 2)
+plot(showMA ? sma200 : na, "SMA 200", color.new(#7c3aed, 0), 2)
+plot(showRange ? hi20 : na, "20d high", color.new(color.gray, 30), 1, plot.style_stepline)
+plot(showRange ? lo20 : na, "20d low", color.new(color.gray, 30), 1, plot.style_stepline)
+
+G = color.new(#16a34a, 0)
+R = color.new(#dc2626, 0)
+B = color.new(#2563eb, 0)
+O = color.new(#d97706, 0)
+
+var line[]  lines  = array.new<line>()
+var label[] labels = array.new<label>()
+
+lvl(float p, string txt, color c, string st) =>
+    array.push(lines, line.new(bar_index - 1, p, bar_index, p, extend = extend.both, color = c, style = st, width = 2))
+    array.push(labels, label.new(bar_index + 3, p, txt + "  " + str.tostring(p, format.mintick), style = label.style_label_left, color = color.new(c, 85), textcolor = c, size = size.small))
+
+zone(float top, float bot, string txt, color c) =>
+    lvl(top, txt + " top", c, line.style_dotted)
+    lvl(bot, txt + " bottom", c, line.style_dotted)
+
+var table info = table.new(position.top_right, 1, 2, bgcolor = color.new(color.black, 20), border_width = 1)
+
+if barstate.islast
+    for l in lines
+        line.delete(l)
+    for b in labels
+        label.delete(b)
+    array.clear(lines)
+    array.clear(labels)
+
+    t = syminfo.ticker
+    bias = "No plan for this symbol"
+    plan = ""
+    S = line.style_solid
+    D = line.style_dashed
+
+    // ---------------- Indexes ----------------
+    if t == "SPY"
+        bias := "NEUTRAL, lean bearish"
+        plan := "Long only above 771. Below 758.7 go defensive."
+        lvl(781.62, "Target / 20d high", G, D)
+        lvl(771.00, "Bull trigger: reclaim", G, S)
+        lvl(758.68, "Bear trigger: lose", R, S)
+    else if t == "QQQ"
+        bias := "BEARISH short-term"
+        plan := "Sell bounces into 725-734. No dip-buys until > 726."
+        lvl(762.86, "20d high", G, D)
+        zone(734.00, 725.43, "Sell zone", O)
+        lvl(701.16, "Support / breakdown below", R, S)
+    else if t == "SMH"
+        bias := "BEARISH"
+        plan := "Weakest group. Losing 520 = breakdown."
+        lvl(582.63, "Resistance (20d)", O, D)
+        lvl(520.53, "Breakdown line", R, S)
+    else if t == "IWM"
+        bias := "BEARISH / NEUTRAL"
+        plan := "Sitting on 200d. Below 269.9 = bearish."
+        lvl(284.64, "Resistance", O, D)
+        lvl(269.88, "Breakdown line", R, S)
+
+    // ---------------- Gold ----------------
+    else if t == "GLD"
+        bias := "BEARISH trend, oversold"
+        plan := "No longs below 378.6. Short a failed bounce there."
+        lvl(385.22, "20d high", O, D)
+        lvl(378.59, "Reclaim = first bottom sign", B, S)
+        lvl(364.33, "20d low support", R, S)
+    else if t == "GC1!"
+        bias := "BEARISH trend, oversold"
+        plan := "No longs below 4140. Short a failed bounce there."
+        lvl(4259.0, "20d high", O, D)
+        lvl(4140.0, "Reclaim = first bottom sign", B, S)
+        lvl(3989.1, "20d low support", R, S)
+
+    // ---------------- Sector ETFs ----------------
+    else if t == "XLV"
+        bias := "BULLISH (swing)"
+        plan := "Passes ignition rules."
+        lvl(187.78, "Target", G, D)
+        lvl(179.28, "Entry", B, S)
+        lvl(175.03, "Stop", R, S)
+    else if t == "XLP"
+        bias := "BULLISH (swing)"
+        plan := "Passes ignition rules."
+        lvl(91.79, "Target", G, D)
+        lvl(87.96, "Entry", B, S)
+        lvl(86.05, "Stop", R, S)
+    else if t == "XLE"
+        bias := "BULLISH but extended (RSI 70)"
+        plan := "Wait for pullback toward the 20d."
+        lvl(69.86, "52w / 20d high", O, D)
+        lvl(65.78, "Buy zone (20d)", B, S)
+
+    // ---------------- Day-trade breakouts ----------------
+    else if t == "AAPL"
+        bias := "BULLISH - breakout watch"
+        plan := "Buy only above 351.73 on 1.5x+ volume."
+        lvl(363.21, "Target", G, D)
+        lvl(351.73, "Breakout trigger", B, S)
+        lvl(334.26, "Stop", R, S)
+    else if t == "ABBV"
+        bias := "BULLISH - breakout watch"
+        plan := "Buy only above 291.40 on 1.5x+ volume."
+        lvl(305.63, "Target", G, D)
+        lvl(291.40, "Breakout trigger", B, S)
+        lvl(277.29, "Stop", R, S)
+    else if t == "LLY"
+        bias := "BULLISH - breakout watch"
+        plan := "Buy above 1321.21. Wide range: size smaller."
+        lvl(1390.65, "Target", G, D)
+        lvl(1321.21, "Breakout trigger", B, S)
+        lvl(1223.38, "Stop", R, S)
+
+    // ---------------- Swing pullbacks ----------------
+    else if t == "MSFT"
+        bias := "BULLISH (swing pullback)"
+        plan := "At the 20d - buy zone 528-533."
+        lvl(566.49, "Target", G, D)
+        zone(533.00, 528.00, "Buy zone", B)
+        lvl(515.65, "Stop", R, S)
+    else if t == "MA"
+        bias := "BULLISH (swing pullback)"
+        plan := "Wait for dip into 592-600 (20d)."
+        lvl(644.37, "Target 2", G, D)
+        lvl(633.29, "Target 1 / 20d high", G, D)
+        zone(600.00, 592.45, "Buy zone", B)
+        lvl(579.90, "Stop (under 50d)", R, S)
+    else if t == "V"
+        bias := "BULLISH (swing pullback)"
+        plan := "Wait for dip into 387-394 (20d)."
+        lvl(424.14, "Target 2", G, D)
+        lvl(414.60, "Target 1 / 20d high", G, D)
+        zone(394.00, 387.08, "Buy zone", B)
+        lvl(376.90, "Stop (under 50d)", R, S)
+    else if t == "KO"
+        bias := "BULLISH (swing pullback)"
+        plan := "Buy 90-92.7, stop under the 20d/50d."
+        lvl(97.30, "Target 2", G, D)
+        lvl(95.37, "Target 1 / 20d high", G, D)
+        zone(92.70, 90.00, "Buy zone", B)
+        lvl(88.90, "Stop (under 50d)", R, S)
+
+    // ---------------- Avoid list ----------------
+    else if t == "ARM" or t == "SMCI" or t == "MU" or t == "AVGO" or t == "GOOGL" or t == "CAT" or t == "GE" or t == "BAC" or t == "NFLX" or t == "ORCL" or t == "COIN" or t == "HOOD" or t == "RIVN"
+        bias := "BEARISH - avoid longs"
+        plan := "Below 20d & 50d. Short only failed bounces at the 20d."
+
+    bc = str.contains(bias, "BULL") ? G : str.contains(bias, "BEAR") ? R : color.gray
+    table.cell(info, 0, 0, t + ": " + bias, text_color = bc, text_size = size.normal, text_halign = text.align_left)
+    table.cell(info, 0, 1, plan, text_color = color.white, text_size = size.small, text_halign = text.align_left)

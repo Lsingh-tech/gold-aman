@@ -82,3 +82,15 @@ winter (EST, roughly Nov–Mar), add one hour to each cron time so the "open"
 scan stays at 09:25 ET. (UK and US DST change on different dates, so there are a
 couple of mismatched weeks each year — nudge the cron if a scan looks an hour
 off.)
+
+---
+
+## TradingView levels overlay
+
+`tradingview/trade_levels.pine` draws the current plan on your TradingView
+charts: bias, entry/trigger, stop and target lines per symbol, plus live daily
+20/50/200 SMAs and the 20-day high/low.
+
+TradingView → **Pine Editor** → paste the file → **Add to chart**. Open any
+covered symbol and its levels appear. Re-paste when the file is updated with a
+new day's levels.
