@@ -1,0 +1,122 @@
+//@version=6
+// MB rule-based levels - AUTO. Recalculates itself on every chart, every day,
+// with the same SETUP RULES the "Market brief delivery - PM (pre-US)" routine
+// uses for the MB watchlist (LS Catalyst Picks). Nothing to update by hand.
+//
+// Stocks (from the last COMPLETED daily bar, so levels hold steady all day and
+// match the 13:25 UK brief):
+//   RSI 70+  -> dip-buy entry  = max(SMA20, 1-month high - 2 ATR)
+//   else     -> breakout entry = 1-month high + 0.1 ATR
+//   Stop = entry - 2 ATR | TP1 = entry + 4 ATR (2R) | TP2 = entry + 6 ATR (3R)
+//   Exit = daily close below SMA50
+// Futures / indexes / gold (live): 1-month high/low, SMA20/50/200,
+//   yesterday's high/low and today's (overnight) high/low.
+indicator("MB Levels (auto)", overlay = true, max_lines_count = 60, max_labels_count = 60)
+
+showMA     = input.bool(true, "Daily SMA 20 / 50 / 200")
+showLevels = input.bool(true, "Levels")
+monthBars  = input.int(21, "1-month lookback (daily bars)", minval = 5)
+labelRight = input.int(3, "Label offset (bars)")
+
+// Daily values with offset o (0 = today/live, 1 = last completed day)
+daily(int o) =>
+    rsiv = ta.rsi(close, 14)
+    [close[o], rsiv[o], rsiv[o + 1], ta.atr(14)[o], ta.sma(close, 20)[o], ta.sma(close, 50)[o], ta.sma(close, 200)[o], ta.highest(high, monthBars)[o], ta.lowest(low, monthBars)[o], close[o + monthBars], high[o + 1], low[o + 1]]
+
+[c, r, r1, a, s20, s50, s200, h1m, l1m, cM, ph, pl] = request.security(syminfo.tickerid, "D", daily(1), lookahead = barmerge.lookahead_on)
+[lc, lr, lr1, la, ls20, ls50, ls200, lh1m, ll1m, lcM, lph, lpl] = request.security(syminfo.tickerid, "D", daily(0), lookahead = barmerge.lookahead_off)
+[dh, dl] = request.security(syminfo.tickerid, "D", [high, low], lookahead = barmerge.lookahead_off)
+
+isStock = syminfo.type == "stock" or syminfo.type == "dr" or syminfo.type == "fund"
+
+plot(showMA ? (isStock ? s20 : ls20) : na, "SMA 20", color.new(#2563eb, 0), 2)
+plot(showMA ? (isStock ? s50 : ls50) : na, "SMA 50 (exit line)", color.new(#d97706, 0), 2)
+plot(showMA ? (isStock ? s200 : ls200) : na, "SMA 200", color.new(#7c3aed, 0), 2)
+
+G = color.new(#16a34a, 0)
+R = color.new(#dc2626, 0)
+B = color.new(#2563eb, 0)
+O = color.new(#d97706, 0)
+N = color.new(color.gray, 0)
+
+var line[]  lines  = array.new<line>()
+var label[] labels = array.new<label>()
+
+lvl(float p, string txt, color col, string st) =>
+    if not na(p)
+        array.push(lines, line.new(bar_index - 1, p, bar_index, p, extend = extend.both, color = col, style = st, width = 2))
+        array.push(labels, label.new(bar_index + labelRight, p, txt + "  " + str.tostring(p, format.mintick), style = label.style_label_left, color = color.new(col, 85), textcolor = col, size = size.small))
+
+var table info = table.new(position.top_right, 1, 4, bgcolor = color.new(color.black, 20), border_width = 1)
+
+f2(float v) => str.tostring(v, "#.##")
+
+if barstate.islast and showLevels
+    for l in lines
+        line.delete(l)
+    for b in labels
+        label.delete(b)
+    array.clear(lines)
+    array.clear(labels)
+
+    S = line.style_solid
+    D = line.style_dashed
+
+    if isStock
+        dip   = r >= 70
+        entry = dip ? math.max(s20, h1m - 2 * a) : h1m + 0.1 * a
+        stop  = entry - 2 * a
+        tp1   = entry + 4 * a
+        tp2   = entry + 6 * a
+        perf  = (c / cM - 1) * 100
+
+        cat = c < s50 ? "BELOW EXIT" : (r1 - r >= 10 or c < s20) ? "WEAKENING" : (c > s20 and c > s50 and c >= h1m * 0.97 and r >= 60) ? "STRONG" : "BUILDING"
+        catTxt = cat == "STRONG" ? "💪 STRONG" : cat == "BUILDING" ? "🔭 BUILDING" : cat == "WEAKENING" ? "⚠️ WEAKENING" : "❌ BELOW EXIT"
+        catCol = cat == "STRONG" ? G : cat == "BUILDING" ? B : cat == "WEAKENING" ? O : R
+        rsiTxt = "RSI " + str.tostring(r, "#") + (r >= 70 ? " 🔥 overbought" : r <= 30 ? " 🧊 oversold" : "")
+
+        rm = c < s50 ? "❌ Remove: closed below exit line" : (perf < 0 and r < 50) ? "❌ Remove: down over 1 month, RSI < 50" : math.abs(perf) < 3 ? "❌ Remove: dead money (<3% in 1 month)" : "✅ Keep"
+
+        hit = ""
+        if dl <= stop
+            hit += "🛑 stop hit today  "
+        if dl <= entry and dh >= entry
+            hit += "🚀 entry touched today  "
+        if dh >= tp1
+            hit += "🎯 TP1 hit  "
+        if dh >= tp2
+            hit += "🎯 TP2 hit  "
+        if lc < s50
+            hit += "⚠️ trading below exit line"
+
+        lvl(tp2, "TP2 (3R)", G, D)
+        lvl(tp1, "TP1 (2R)", G, D)
+        if dip
+            lvl(h1m, "1-month high", O, D)
+        lvl(entry, dip ? "Entry (dip-buy)" : "Entry (breakout)", B, S)
+        lvl(stop, "Stop", R, S)
+        lvl(s50, "Exit line (close below 50d)", R, D)
+        lvl(l1m, "Support (1-month low)", O, D)
+
+        table.cell(info, 0, 0, syminfo.ticker + "  " + catTxt + "  ·  " + rsiTxt, text_color = catCol, text_size = size.normal, text_halign = text.align_left)
+        table.cell(info, 0, 1, "Entry " + f2(entry) + (dip ? " (dip-buy)" : " (breakout)") + " · SL " + f2(stop) + " · TP1 " + f2(tp1) + " · TP2 " + f2(tp2) + " · Exit < " + f2(s50), text_color = color.white, text_size = size.small, text_halign = text.align_left)
+        table.cell(info, 0, 2, rm + "   (1M " + str.tostring(perf, "#.#") + "%)", text_color = str.startswith(rm, "✅") ? G : R, text_size = size.small, text_halign = text.align_left)
+        table.cell(info, 0, 3, hit == "" ? "No level hit today" : hit, text_color = hit == "" ? N : O, text_size = size.small, text_halign = text.align_left)
+    else
+        bias = lc < ls20 and lc < ls50 ? "BEARISH" : lc > ls20 and lc > ls50 ? "BULLISH" : "NEUTRAL"
+        bc = bias == "BEARISH" ? R : bias == "BULLISH" ? G : O
+
+        lvl(lh1m, "1-month high", O, D)
+        lvl(ls20, "20d avg", B, S)
+        lvl(ls50, "50d avg", O, S)
+        lvl(ls200, "200d avg", R, D)
+        lvl(ph,  "Yesterday high", N, D)
+        lvl(pl,  "Yesterday low", N, D)
+        lvl(dh,  "Today / overnight high", B, D)
+        lvl(dl,  "Today / overnight low", B, D)
+        lvl(ll1m, "1-month low (floor)", R, S)
+
+        table.cell(info, 0, 0, syminfo.ticker + "  " + bias + "  ·  RSI " + str.tostring(lr, "#"), text_color = bc, text_size = size.normal, text_halign = text.align_left)
+        table.cell(info, 0, 1, "Ceiling " + f2(math.min(ls20, ls50) > lc ? math.min(ls20, ls50) : lh1m) + " · Floor " + f2(ll1m), text_color = color.white, text_size = size.small, text_halign = text.align_left)
+        table.cell(info, 0, 2, "Below 20d & 50d = sell rallies. Above both = buy dips.", text_color = N, text_size = size.small, text_halign = text.align_left)
+        table.cell(info, 0, 3, "", text_color = N, text_size = size.small)

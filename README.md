@@ -87,10 +87,16 @@ off.)
 
 ## TradingView levels overlay
 
-`tradingview/trade_levels.pine` draws the current plan on your TradingView
-charts: bias, entry/trigger, stop and target lines per symbol, plus live daily
-20/50/200 SMAs and the 20-day high/low.
+**`tradingview/mb_levels_auto.pine` (recommended)** recalculates the MB watchlist
+rule-based levels itself on every chart, every day - entry (dip-buy or breakout),
+stop, TP1, TP2, exit line and support for stocks, plus the category
+(STRONG / BUILDING / WEAKENING), keep/remove check and today's hits. On
+futures, indexes and gold (NQ1!, GC1!, NKD1!, NI225...) it draws the 1-month
+high/low, 20/50/200-day averages and yesterday's / overnight high and low.
+Nothing to update by hand.
 
-TradingView → **Pine Editor** → paste the file → **Add to chart**. Open any
-covered symbol and its levels appear. Re-paste when the file is updated with a
-new day's levels.
+`tradingview/trade_levels.pine` is the fixed 2026-10-27 snapshot.
+
+TradingView (web or desktop, not the phone app) -> **Pine Editor** -> paste ->
+**Save** -> **Add to chart**. It then appears on the phone under
+Indicators -> My scripts.
