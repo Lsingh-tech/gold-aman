@@ -5,8 +5,17 @@ base just under its highs, in a clean uptrend, ready to snap upward (your
 "elastic band" squeeze) — and sends trade-ready alerts to your **iPhone via
 Telegram**.
 
-It runs **automatically** three times each US trading day: pre-market, five
-minutes before the open, and after-hours. **No monthly subscription** — it runs
+It runs **automatically** six times each US trading day (all times ET):
+
+| Time | Session | Live volume filter |
+|---|---|---|
+| 07:00 | Early Pre-Market | no |
+| 08:00 | Pre-Market | no |
+| 09:25 | US Open (5 min before the bell) | yes |
+| 09:45 | Opening Drive (first 15 min in) | yes |
+| 10:30 | Morning Follow-Through | yes |
+| 16:15 | After-Hours | yes |
+ **No monthly subscription** — it runs
 for free on GitHub Actions (your MacBook and iPhone can stay off).
 
 ---
@@ -79,7 +88,8 @@ Schedule it with `cron` (`crontab -e`) to run at your chosen times.
 GitHub cron is in UTC and doesn't shift with US clocks. The times in
 `scanner.yml` target **US Eastern summer (EDT)**. When the US falls back to
 winter (EST, roughly Nov–Mar), add one hour to each cron time so the "open"
-scan stays at 09:25 ET. (UK and US DST change on different dates, so there are a
+scan stays at 09:25 ET — and update the matching `case` patterns in the
+"Determine session" step to the same new times. (UK and US DST change on different dates, so there are a
 couple of mismatched weeks each year — nudge the cron if a scan looks an hour
 off.)
 
