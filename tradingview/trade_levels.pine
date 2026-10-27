@@ -1,9 +1,12 @@
 //@version=6
 // Trade levels from the 2026-10-27 analysis (daily data through the 2026-10-26 close).
+// Includes the MB watchlist (LS Catalyst Picks) re-levelled with its own rules:
+//   RSI 70+ -> dip-buy entry = max(20d avg, 1-month high - 2 ATR); else breakout = 1-month high + 0.1 ATR
+//   Stop = entry - 2 ATR, TP1 = +4 ATR (2R), TP2 = +6 ATR (3R), Exit = daily close below 50d avg.
 // Add once: Pine Editor -> paste -> "Add to chart". Then open any symbol below and
 // its levels draw automatically. The SMAs and 20-day high/low are live; the plan
 // levels (triggers, stops, targets) are fixed from the analysis date.
-indicator("Trade Levels 2026-10-27", overlay = true, max_lines_count = 100, max_labels_count = 100)
+indicator("Trade Levels 2026-10-27 (incl. MB watchlist)", overlay = true, max_lines_count = 100, max_labels_count = 100)
 
 showMA    = input.bool(true, "Daily SMA 20 / 50 / 200")
 showRange = input.bool(true, "Live 20-day high / low")
@@ -83,12 +86,6 @@ if barstate.islast
         lvl(385.22, "20d high", O, D)
         lvl(378.59, "Reclaim = first bottom sign", B, S)
         lvl(364.33, "20d low support", R, S)
-    else if t == "GC1!"
-        bias := "BEARISH trend, oversold"
-        plan := "No longs below 4140. Short a failed bounce there."
-        lvl(4259.0, "20d high", O, D)
-        lvl(4140.0, "Reclaim = first bottom sign", B, S)
-        lvl(3989.1, "20d low support", R, S)
 
     // ---------------- Sector ETFs ----------------
     else if t == "XLV"
@@ -158,11 +155,202 @@ if barstate.islast
         zone(92.70, 90.00, "Buy zone", B)
         lvl(88.90, "Stop (under 50d)", R, S)
 
+    // ---------------- Futures (NQ / gold) ----------------
+    else if t == "NQ1!" or t == "MNQ1!"
+        bias := "BEARISH - bounce, not yet a turn"
+        plan := "Above 29,590 -> 29,945 in view. Below 28,987 -> 28,500 / 28,000."
+        lvl(30332.0, "Ceiling 2 (20d avg)", O, D)
+        lvl(29945.0, "Ceiling 1 (50d avg)", O, S)
+        lvl(29590.0, "Turning point (2-day high)", B, S)
+        lvl(29024.0, "Yesterday low", O, D)
+        lvl(28987.0, "Floor (1-month low)", R, S)
+        lvl(28002.0, "200d avg", R, D)
+    else if t == "GC1!" or t == "MGC1!"
+        bias := "BEARISH trend, oversold (RSI 33)"
+        plan := "Above 4,044 -> 4,140. Below 3,989 -> 3,900. No longs under 4,140."
+        lvl(4324.6, "50d avg", O, D)
+        lvl(4140.3, "Ceiling (20d avg)", O, S)
+        lvl(4044.0, "Turning point (yesterday high)", B, S)
+        lvl(3989.1, "Floor (1-month low)", R, S)
+        lvl(3900.0, "Next floor (round number)", R, D)
+
+    // ---------------- MB watchlist (LS Catalyst Picks) ----------------
+    else if t == "EOG"
+        bias := "WATCHLIST STRONG - dip-buy"
+        plan := "RSI 76. Entry 157.34 (dip-buy). Exit on daily close below 147.99."
+        lvl(180.64, "TP2 (3R)", G, D)
+        lvl(172.88, "TP1 (2R)", G, D)
+        lvl(165.11, "1-month high", O, D)
+        lvl(157.34, "Entry (dip-buy)", B, S)
+        lvl(149.58, "Stop", R, S)
+        lvl(147.99, "Exit line (50d)", R, D)
+        lvl(137.35, "Support (1-month low)", O, D)
+    else if t == "CVX"
+        bias := "WATCHLIST STRONG - dip-buy"
+        plan := "RSI 74. Entry 224.70 (dip-buy). Exit on daily close below 211.06."
+        lvl(252.85, "TP2 (3R)", G, D)
+        lvl(243.46, "TP1 (2R)", G, D)
+        lvl(234.08, "1-month high", O, D)
+        lvl(224.70, "Entry (dip-buy)", B, S)
+        lvl(215.31, "Stop", R, S)
+        lvl(211.06, "Exit line (50d)", R, D)
+        lvl(201.96, "Support (1-month low)", O, D)
+    else if t == "CHRD"
+        bias := "WATCHLIST STRONG - breakout"
+        plan := "RSI 65. Entry 160.46 (breakout). Exit on daily close below 145.26."
+        lvl(190.22, "TP2 (3R)", G, D)
+        lvl(180.30, "TP1 (2R)", G, D)
+        lvl(160.46, "Entry (breakout)", B, S)
+        lvl(150.54, "Stop", R, S)
+        lvl(145.26, "Exit line (50d)", R, D)
+        lvl(132.69, "Support (1-month low)", O, D)
+    else if t == "PAA"
+        bias := "WATCHLIST STRONG - dip-buy"
+        plan := "RSI 79. Entry 25.93 (dip-buy). Exit on daily close below 25.03."
+        lvl(28.91, "TP2 (3R)", G, D)
+        lvl(27.91, "TP1 (2R)", G, D)
+        lvl(26.92, "1-month high", O, D)
+        lvl(25.93, "Entry (dip-buy)", B, S)
+        lvl(24.93, "Stop", R, S)
+        lvl(25.03, "Exit line (50d)", R, D)
+        lvl(23.43, "Support (1-month low)", O, D)
+    else if t == "ABM"
+        bias := "WATCHLIST STRONG - dip-buy"
+        plan := "RSI 77. Entry 52.40 (dip-buy). Exit on daily close below 49.20."
+        lvl(58.86, "TP2 (3R)", G, D)
+        lvl(56.70, "TP1 (2R)", G, D)
+        lvl(54.55, "1-month high", O, D)
+        lvl(52.40, "Entry (dip-buy)", B, S)
+        lvl(50.24, "Stop", R, S)
+        lvl(49.20, "Exit line (50d)", R, D)
+        lvl(47.62, "Support (1-month low)", O, D)
+    else if t == "SHEL"
+        bias := "WATCHLIST STRONG - dip-buy"
+        plan := "RSI 70. Entry 104.71 (dip-buy). Exit on daily close below 96.97."
+        lvl(115.87, "TP2 (3R)", G, D)
+        lvl(112.15, "TP1 (2R)", G, D)
+        lvl(108.43, "1-month high", O, D)
+        lvl(104.71, "Entry (dip-buy)", B, S)
+        lvl(100.99, "Stop", R, S)
+        lvl(96.97, "Exit line (50d)", R, D)
+        lvl(94.34, "Support (1-month low)", O, D)
+    else if t == "UBSI"
+        bias := "WATCHLIST STRONG - breakout"
+        plan := "RSI 68. Entry 49.34 (breakout). Exit on daily close below 47.04."
+        lvl(54.44, "TP2 (3R)", G, D)
+        lvl(52.74, "TP1 (2R)", G, D)
+        lvl(49.34, "Entry (breakout)", B, S)
+        lvl(47.63, "Stop", R, S)
+        lvl(47.04, "Exit line (50d)", R, D)
+        lvl(45.02, "Support (1-month low)", O, D)
+    else if t == "HG"
+        bias := "WATCHLIST STRONG - breakout"
+        plan := "RSI 61. Entry 37.34 (breakout). Exit on daily close below 34.91."
+        lvl(42.13, "TP2 (3R)", G, D)
+        lvl(40.53, "TP1 (2R)", G, D)
+        lvl(37.34, "Entry (breakout)", B, S)
+        lvl(35.74, "Stop", R, S)
+        lvl(34.91, "Exit line (50d)", R, D)
+        lvl(32.70, "Support (1-month low)", O, D)
+    else if t == "THG"
+        bias := "WATCHLIST STRONG - breakout"
+        plan := "RSI 69. Entry 241.40 (breakout). Exit on daily close below 225.20."
+        lvl(267.45, "TP2 (3R)", G, D)
+        lvl(258.77, "TP1 (2R)", G, D)
+        lvl(241.40, "Entry (breakout)", B, S)
+        lvl(232.72, "Stop", R, S)
+        lvl(225.20, "Exit line (50d)", R, D)
+        lvl(213.63, "Support (1-month low)", O, D)
+    else if t == "AFG"
+        bias := "WATCHLIST STRONG - breakout"
+        plan := "RSI 66. Entry 155.24 (breakout). Exit on daily close below 143.16."
+        lvl(170.21, "TP2 (3R)", G, D)
+        lvl(165.22, "TP1 (2R)", G, D)
+        lvl(155.24, "Entry (breakout)", B, S)
+        lvl(150.25, "Stop", R, S)
+        lvl(143.16, "Exit line (50d)", R, D)
+        lvl(136.02, "Support (1-month low)", O, D)
+    else if t == "CI"
+        bias := "WATCHLIST STRONG - breakout"
+        plan := "RSI 64. Entry 317.03 (breakout). Exit on daily close below 282.22."
+        lvl(362.49, "TP2 (3R)", G, D)
+        lvl(347.33, "TP1 (2R)", G, D)
+        lvl(317.03, "Entry (breakout)", B, S)
+        lvl(301.87, "Stop", R, S)
+        lvl(282.22, "Exit line (50d)", R, D)
+        lvl(262.85, "Support (1-month low)", O, D)
+    else if t == "TRV"
+        bias := "WATCHLIST STRONG - breakout"
+        plan := "RSI 69. Entry 408.63 (breakout). Exit on daily close below 372.05."
+        lvl(454.50, "TP2 (3R)", G, D)
+        lvl(439.21, "TP1 (2R)", G, D)
+        lvl(408.63, "Entry (breakout)", B, S)
+        lvl(393.35, "Stop", R, S)
+        lvl(372.05, "Exit line (50d)", R, D)
+        lvl(353.79, "Support (1-month low)", O, D)
+    else if t == "CNQ"
+        bias := "WATCHLIST STRONG - dip-buy"
+        plan := "RSI 74. Entry 52.82 (dip-buy). Exit on daily close below 50.33."
+        lvl(60.86, "TP2 (3R)", G, D)
+        lvl(58.18, "TP1 (2R)", G, D)
+        lvl(55.50, "1-month high", O, D)
+        lvl(52.82, "Entry (dip-buy)", B, S)
+        lvl(50.14, "Stop", R, S)
+        lvl(50.33, "Exit line (50d)", R, D)
+        lvl(46.58, "Support (1-month low)", O, D)
+    else if t == "SU"
+        bias := "WATCHLIST STRONG - dip-buy"
+        plan := "RSI 73. Entry 76.13 (dip-buy). Exit on daily close below 70.24."
+        lvl(88.49, "TP2 (3R)", G, D)
+        lvl(84.37, "TP1 (2R)", G, D)
+        lvl(80.25, "1-month high", O, D)
+        lvl(76.13, "Entry (dip-buy)", B, S)
+        lvl(72.01, "Stop", R, S)
+        lvl(70.24, "Exit line (50d)", R, D)
+        lvl(67.11, "Support (1-month low)", O, D)
+    else if t == "EG"
+        bias := "WATCHLIST STRONG - breakout"
+        plan := "RSI 65. Entry 410.61 (breakout). Exit on daily close below 376.04."
+        lvl(458.05, "TP2 (3R)", G, D)
+        lvl(442.24, "TP1 (2R)", G, D)
+        lvl(410.61, "Entry (breakout)", B, S)
+        lvl(394.80, "Stop", R, S)
+        lvl(376.04, "Exit line (50d)", R, D)
+        lvl(361.25, "Support (1-month low)", O, D)
+    else if t == "RGA"
+        bias := "WATCHLIST STRONG - breakout"
+        plan := "RSI 61. Entry 272.95 (breakout). Exit on daily close below 251.69."
+        lvl(303.68, "TP2 (3R)", G, D)
+        lvl(293.44, "TP1 (2R)", G, D)
+        lvl(272.95, "Entry (breakout)", B, S)
+        lvl(262.71, "Stop", R, S)
+        lvl(251.69, "Exit line (50d)", R, D)
+        lvl(243.64, "Support (1-month low)", O, D)
+    else if t == "SSL"
+        bias := "WATCHLIST BUILDING - dip-buy"
+        plan := "RSI 71. Entry 17.03 (dip-buy). Exit on daily close below 14.03."
+        lvl(20.52, "TP2 (3R)", G, D)
+        lvl(19.35, "TP1 (2R)", G, D)
+        lvl(18.19, "1-month high", O, D)
+        lvl(17.03, "Entry (dip-buy)", B, S)
+        lvl(15.86, "Stop", R, S)
+        lvl(14.03, "Exit line (50d)", R, D)
+        lvl(13.68, "Support (1-month low)", O, D)
+    else if t == "E"
+        bias := "WATCHLIST WEAKENING - breakout"
+        plan := "RSI 66. Entry 62.28 (breakout). Exit on daily close below 55.87."
+        lvl(69.74, "TP2 (3R)", G, D)
+        lvl(67.26, "TP1 (2R)", G, D)
+        lvl(62.28, "Entry (breakout)", B, S)
+        lvl(59.80, "Stop", R, S)
+        lvl(55.87, "Exit line (50d)", R, D)
+        lvl(53.65, "Support (1-month low)", O, D)
+
     // ---------------- Avoid list ----------------
     else if t == "ARM" or t == "SMCI" or t == "MU" or t == "AVGO" or t == "GOOGL" or t == "CAT" or t == "GE" or t == "BAC" or t == "NFLX" or t == "ORCL" or t == "COIN" or t == "HOOD" or t == "RIVN"
         bias := "BEARISH - avoid longs"
         plan := "Below 20d & 50d. Short only failed bounces at the 20d."
 
-    bc = str.contains(bias, "BULL") ? G : str.contains(bias, "BEAR") ? R : color.gray
+    bc = str.contains(bias, "WEAKENING") ? O : str.contains(bias, "BULL") or str.contains(bias, "STRONG") or str.contains(bias, "BUILDING") ? G : str.contains(bias, "BEAR") ? R : color.gray
     table.cell(info, 0, 0, t + ": " + bias, text_color = bc, text_size = size.normal, text_halign = text.align_left)
     table.cell(info, 0, 1, plan, text_color = color.white, text_size = size.small, text_halign = text.align_left)
