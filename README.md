@@ -95,7 +95,9 @@ futures, indexes and gold (NQ1!, GC1!, NKD1!, NI225...) it draws the 1-month
 high/low, 20/50/200-day averages and yesterday's / overnight high and low.
 Nothing to update by hand.
 
-`tradingview/trade_levels.pine` is the fixed 2026-10-27 snapshot.
+`tradingview/mb_levels_snapshot.pine` holds the exact levels from the latest
+Drive watchlist and pre-US brief (currently 2026-11-05), matching the Pushover
+alerts. Use one script or the other, not both.
 
 TradingView (web or desktop, not the phone app) -> **Pine Editor** -> paste ->
 **Save** -> **Add to chart**. It then appears on the phone under

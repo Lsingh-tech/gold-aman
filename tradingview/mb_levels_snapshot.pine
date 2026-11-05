@@ -1,0 +1,255 @@
+//@version=6
+// MB watchlist levels - SNAPSHOT from Drive "MB watchlist" updated 2026-11-05 13:30 UK,
+// plus NQ / gold levels from "MB 2026-11-05 PM" and Nikkei from the 2026-11-05 close.
+// Values are copied exactly from the brief, so they match the Pushover alerts.
+// For levels that recalculate themselves daily, use mb_levels_auto.pine instead.
+indicator("MB Levels 2026-11-05", overlay = true, max_lines_count = 100, max_labels_count = 100)
+
+G = color.new(#16a34a, 0)
+R = color.new(#dc2626, 0)
+B = color.new(#2563eb, 0)
+O = color.new(#d97706, 0)
+
+var line[]  lines  = array.new<line>()
+var label[] labels = array.new<label>()
+
+lvl(float p, string txt, color c, string st) =>
+    array.push(lines, line.new(bar_index - 1, p, bar_index, p, extend = extend.both, color = c, style = st, width = 2))
+    array.push(labels, label.new(bar_index + 3, p, txt + "  " + str.tostring(p, format.mintick), style = label.style_label_left, color = color.new(c, 85), textcolor = c, size = size.small))
+
+var table info = table.new(position.top_right, 1, 2, bgcolor = color.new(color.black, 20), border_width = 1)
+
+if barstate.islast
+    for l in lines
+        line.delete(l)
+    for b in labels
+        label.delete(b)
+    array.clear(lines)
+    array.clear(labels)
+
+    t = syminfo.ticker
+    bias = "Not on the MB watchlist"
+    plan = ""
+    S = line.style_solid
+    D = line.style_dashed
+
+    if t == "NQ1!" or t == "MNQ1!"
+        bias := "NQ BEARISH (RSI 36)"
+        plan := "Hold 28,168 + back above 28,668 -> 29,541. Close below 28,168 -> 27,616."
+        lvl(29897, "Resistance (50d avg)", O, D)
+        lvl(29541, "Resistance (20d avg)", O, S)
+        lvl(28668, "Today's high", B, D)
+        lvl(28168, "TURNING POINT (today's low)", B, S)
+        lvl(27616, "Support (1-month low)", R, S)
+    else if t == "GC1!" or t == "MGC1!"
+        bias := "GOLD FIRMING (RSI 51)"
+        plan := "Above 4,088 -> 4,156 then 4,242. Below 4,067 -> 3,879."
+        lvl(4242, "Resistance (1M high / 50d)", O, S)
+        lvl(4156, "Today's high", O, D)
+        lvl(4088, "TURNING POINT (20d avg)", B, S)
+        lvl(4067, "Support (today's low)", R, D)
+        lvl(3879, "Support (1-month low)", R, S)
+    else if t == "NI225" or t == "JP225" or t == "N225" or t == "NKD1!" or t == "NIY1!" or t == "NK2251!" or t == "NK225M1!"
+        bias := "NIKKEI BEARISH - below 20d & 50d"
+        plan := "Index levels (futures trade at a slightly different price). Below 61,887 (200d) -> 60,030."
+        lvl(65555, "Resistance (50d avg)", O, D)
+        lvl(65296, "Resistance (20d avg)", O, S)
+        lvl(63105, "Today's high", B, D)
+        lvl(61887, "TURNING POINT (200d avg)", B, S)
+        lvl(60030, "Support (1-month low)", R, S)
+    else if t == "ABM"
+        bias := "STRONG · Business services · RSI 71 🔥"
+        plan := "Entry 53.08 (dip-buy) · SL 50.83 · TP1 1.00 · TP2 2.00 · Exit below 50.14"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(55.34, "1-month high", O, D)
+        lvl(53.08, "Entry (dip-buy)", B, S)
+        lvl(50.83, "Stop", R, S)
+        lvl(50.14, "Exit line (close below 50d)", R, D)
+        lvl(47.95, "Support (1-month low)", O, D)
+    else if t == "THG"
+        bias := "STRONG · Insurance · RSI 72 🔥"
+        plan := "Entry 241.97 (dip-buy) · SL 231.28 · TP1 1.00 · TP2 2.00 · Exit below 227.76"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(252.66, "1-month high", O, D)
+        lvl(241.97, "Entry (dip-buy)", B, S)
+        lvl(231.28, "Stop", R, S)
+        lvl(227.76, "Exit line (close below 50d)", R, D)
+        lvl(216.91, "Support (1-month low)", O, D)
+    else if t == "AFG"
+        bias := "STRONG · Insurance · RSI 67"
+        plan := "Entry 156.52 (breakout) · SL 150.92 · TP1 1.00 · TP2 2.00 · Exit below 144.37"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(156.52, "Entry (breakout)", B, S)
+        lvl(150.92, "Stop", R, S)
+        lvl(144.37, "Exit line (close below 50d)", R, D)
+        lvl(138.46, "Support (1-month low)", O, D)
+    else if t == "EG"
+        bias := "STRONG · Insurance · RSI 69"
+        plan := "Entry 422.51 (breakout) · SL 402.75 · TP1 1.00 · TP2 2.00 · Exit below 381.08"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(422.51, "Entry (breakout)", B, S)
+        lvl(402.75, "Stop", R, S)
+        lvl(381.08, "Exit line (close below 50d)", R, D)
+        lvl(361.25, "Support (1-month low)", O, D)
+    else if t == "ACGL"
+        bias := "STRONG NEW · Insurance · RSI 73 🔥"
+        plan := "Entry 106.05 (dip-buy) · SL 101.38 · TP1 1.00 · TP2 2.00 · Exit below 98.47"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(110.73, "1-month high", O, D)
+        lvl(106.05, "Entry (dip-buy)", B, S)
+        lvl(101.38, "Stop", R, S)
+        lvl(98.47, "Exit line (close below 50d)", R, D)
+        lvl(93.19, "Support (1-month low)", O, D)
+    else if t == "EXEL"
+        bias := "STRONG · Pharma & biotech · RSI 86 🔥"
+        plan := "Entry 69.32 (dip-buy) · SL 65.20 · TP1 1.00 · TP2 2.00 · Exit below 60.38"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(73.41, "1-month high", O, D)
+        lvl(69.32, "Entry (dip-buy)", B, S)
+        lvl(65.20, "Stop", R, S)
+        lvl(60.38, "Exit line (close below 50d)", R, D)
+        lvl(57.02, "Support (1-month low)", O, D)
+    else if t == "CB"
+        bias := "STRONG NEW · Insurance · RSI 71 🔥"
+        plan := "Entry 362.17 (dip-buy) · SL 349.73 · TP1 1.00 · TP2 2.00 · Exit below 344.92"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(374.60, "1-month high", O, D)
+        lvl(362.17, "Entry (dip-buy)", B, S)
+        lvl(349.73, "Stop", R, S)
+        lvl(344.92, "Exit line (close below 50d)", R, D)
+        lvl(328.81, "Support (1-month low)", O, D)
+    else if t == "TRV"
+        bias := "STRONG · Insurance · RSI 69"
+        plan := "Entry 410.11 (breakout) · SL 394.10 · TP1 1.00 · TP2 2.00 · Exit below 376.57"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(410.11, "Entry (breakout)", B, S)
+        lvl(394.10, "Stop", R, S)
+        lvl(376.57, "Exit line (close below 50d)", R, D)
+        lvl(357.09, "Support (1-month low)", O, D)
+    else if t == "ANF"
+        bias := "STRONG · Shops & consumer · RSI 66"
+        plan := "Entry 172.48 (breakout) · SL 159.55 · TP1 1.00 · TP2 2.00 · Exit below 147.20"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(172.48, "Entry (breakout)", B, S)
+        lvl(159.55, "Stop", R, S)
+        lvl(147.20, "Exit line (close below 50d)", R, D)
+        lvl(136.73, "Support (1-month low)", O, D)
+    else if t == "MHK"
+        bias := "STRONG NEW · Industrial · RSI 73 🔥"
+        plan := "Entry 142.51 (dip-buy) · SL 130.56 · TP1 1.00 · TP2 2.00 · Exit below 126.50"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(154.46, "1-month high", O, D)
+        lvl(142.51, "Entry (dip-buy)", B, S)
+        lvl(130.56, "Stop", R, S)
+        lvl(126.50, "Exit line (close below 50d)", R, D)
+        lvl(114.37, "Support (1-month low)", O, D)
+    else if t == "EHC"
+        bias := "STRONG NEW · Health · RSI 71 🔥"
+        plan := "Entry 133.58 (dip-buy) · SL 125.17 · TP1 1.00 · TP2 2.00 · Exit below 123.88"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(141.99, "1-month high", O, D)
+        lvl(133.58, "Entry (dip-buy)", B, S)
+        lvl(125.17, "Stop", R, S)
+        lvl(123.88, "Exit line (close below 50d)", R, D)
+        lvl(118.97, "Support (1-month low)", O, D)
+    else if t == "CVX"
+        bias := "WEAKENING · Oil & energy · RSI 45"
+        plan := "Entry 236.99 (breakout) · SL 226.70 · TP1 1.00 · TP2 2.00 · Exit below 214.38"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(236.99, "Entry (breakout)", B, S)
+        lvl(226.70, "Stop", R, S)
+        lvl(214.38, "Exit line (close below 50d)", R, D)
+        lvl(201.96, "Support (1-month low)", O, D)
+    else if t == "SHEL"
+        bias := "WEAKENING · Oil & energy · RSI 48"
+        plan := "Entry 109.58 (breakout) · SL 105.35 · TP1 1.00 · TP2 2.00 · Exit below 98.74"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(109.58, "Entry (breakout)", B, S)
+        lvl(105.35, "Stop", R, S)
+        lvl(98.74, "Exit line (close below 50d)", R, D)
+        lvl(94.77, "Support (1-month low)", O, D)
+    else if t == "SU"
+        bias := "WEAKENING · Oil & energy · RSI 43"
+        plan := "Entry 80.48 (breakout) · SL 75.82 · TP1 1.00 · TP2 2.00 · Exit below 71.49"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(80.48, "Entry (breakout)", B, S)
+        lvl(75.82, "Stop", R, S)
+        lvl(71.49, "Exit line (close below 50d)", R, D)
+        lvl(67.44, "Support (1-month low)", O, D)
+    else if t == "E"
+        bias := "WEAKENING · Oil & energy · RSI 44"
+        plan := "Entry 62.29 (breakout) · SL 59.72 · TP1 1.00 · TP2 2.00 · Exit below 56.32"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(62.29, "Entry (breakout)", B, S)
+        lvl(59.72, "Stop", R, S)
+        lvl(56.32, "Exit line (close below 50d)", R, D)
+        lvl(53.78, "Support (1-month low)", O, D)
+    else if t == "SSL"
+        bias := "WEAKENING · Chemicals · RSI 46"
+        plan := "Entry 18.25 (breakout) · SL 17.00 · TP1 1.00 · TP2 2.00 · Exit below 14.66"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(18.25, "Entry (breakout)", B, S)
+        lvl(17.00, "Stop", R, S)
+        lvl(14.66, "Exit line (close below 50d)", R, D)
+        lvl(13.78, "Support (1-month low)", O, D)
+    else if t == "RLI"
+        bias := "STRONG NEW · Insurance · RSI 74 🔥"
+        plan := "Entry 65.56 (dip-buy) · SL 62.04 · TP1 1.00 · TP2 2.00 · Exit below 60.78"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(68.91, "1-month high", O, D)
+        lvl(65.56, "Entry (dip-buy)", B, S)
+        lvl(62.04, "Stop", R, S)
+        lvl(60.78, "Exit line (close below 50d)", R, D)
+        lvl(52.00, "Support (1-month low)", O, D)
+    else if t == "MFC"
+        bias := "STRONG NEW · Insurance · RSI 64"
+        plan := "Entry 46.12 (breakout) · SL 44.57 · TP1 1.00 · TP2 2.00 · Exit below 43.73"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(46.12, "Entry (breakout)", B, S)
+        lvl(44.57, "Stop", R, S)
+        lvl(43.73, "Exit line (close below 50d)", R, D)
+        lvl(41.00, "Support (1-month low)", O, D)
+    else if t == "TILE"
+        bias := "STRONG NEW · Industrial · RSI 73 🔥"
+        plan := "Entry 38.01 (dip-buy) · SL 35.72 · TP1 1.00 · TP2 2.00 · Exit below 35.80"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(40.16, "1-month high", O, D)
+        lvl(38.01, "Entry (dip-buy)", B, S)
+        lvl(35.72, "Stop", R, S)
+        lvl(35.80, "Exit line (close below 50d)", R, D)
+        lvl(33.00, "Support (1-month low)", O, D)
+    else if t == "PGR"
+        bias := "STRONG NEW · Insurance · RSI 65"
+        plan := "Entry 236.06 (breakout) · SL 225.80 · TP1 1.00 · TP2 2.00 · Exit below 218.34"
+        lvl(2.00, "TP2 (3R)", G, D)
+        lvl(1.00, "TP1 (2R)", G, D)
+        lvl(236.06, "Entry (breakout)", B, S)
+        lvl(225.80, "Stop", R, S)
+        lvl(218.34, "Exit line (close below 50d)", R, D)
+        lvl(215.00, "Support (1-month low)", O, D)
+    else if t == "PAA" or t == "CNQ" or t == "EOG" or t == "STNG" or t == "CHRD" or t == "CI"
+        bias := "❌ REMOVED from MB watchlist"
+        plan := "Closed below its exit line or lost momentum - no levels."
+
+    bc = str.contains(bias, "REMOVED") or str.contains(bias, "BEARISH") ? R : str.contains(bias, "WEAKENING") ? O : str.contains(bias, "STRONG") or str.contains(bias, "FIRMING") ? G : color.gray
+    table.cell(info, 0, 0, t + ": " + bias, text_color = bc, text_size = size.normal, text_halign = text.align_left)
+    table.cell(info, 0, 1, plan, text_color = color.white, text_size = size.small, text_halign = text.align_left)
